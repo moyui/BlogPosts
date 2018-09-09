@@ -1,4 +1,4 @@
-上一篇文章我们点好了react-router的前置天赋history，这次我们就
+上一篇文章我们点好了react-router的前置天赋history，这次我们就正式进入react-router。
 
 ## react-router源码解读，基于4.3.1
 
@@ -728,121 +728,10 @@ export default withRouter;
 ```
 
 ### StaticRouter
+这边最后简单介绍一下StaticRouter，读者可以自己探索一下。
 ```javascript
-const addLeadingSlash = path => {
-  return path.charAt(0) === "/" ? path : "/" + path;
-};
-
-const addBasename = (basename, location) => {
-  if (!basename) return location;
-
-  return {
-    ...location,
-    pathname: addLeadingSlash(basename) + location.pathname
-  };
-};
-
-const stripBasename = (basename, location) => {
-  if (!basename) return location;
-
-  const base = addLeadingSlash(basename);
-
-  if (location.pathname.indexOf(base) !== 0) return location;
-
-  return {
-    ...location,
-    pathname: location.pathname.substr(base.length)
-  };
-};
-
-const createURL = location =>
-  typeof location === "string" ? location : createPath(location);
-
-const staticHandler = methodName => () => {
-  invariant(false, "You cannot %s with <StaticRouter>", methodName);
-};
-
-const noop = () => {};
-
 /**
- * The public top-level API for a "static" <Router>, so-called because it
- * can't actually change the current location. Instead, it just records
- * location changes in a context object. Useful mainly in testing and
- * server-rendering scenarios.
- * 为什么叫做静态的原因，是不会实际改变location，而是在一个上下文对象中记录路径改变
+ * 为什么叫做静态的原因，是不会实际改变location，而是在一个上下文对象中记录路径改变。
+ * 所以这个组件实现了浏览器端history的一些方法，当然只是模拟的，利用对象来存储，比如go，replace，pop，push。有兴趣的可以自己看一看源码。
  */
-class StaticRouter extends React.Component {
-  static propTypes = {
-    basename: PropTypes.string,
-    context: PropTypes.object.isRequired,
-    location: PropTypes.oneOfType([PropTypes.string, PropTypes.object])
-  };
-
-  static defaultProps = {
-    basename: "",
-    location: "/"
-  };
-
-  static childContextTypes = {
-    router: PropTypes.object.isRequired
-  };
-
-  getChildContext() {
-    return {
-      router: {
-        staticContext: this.props.context
-      }
-    };
-  }
-
-  createHref = path => addLeadingSlash(this.props.basename + createURL(path));
-  //这些都是模仿浏览器的行为
-  handlePush = location => {
-    const { basename, context } = this.props;
-    context.action = "PUSH";
-    context.location = addBasename(basename, createLocation(location));
-    context.url = createURL(context.location);
-  };
-
-  handleReplace = location => {
-    const { basename, context } = this.props;
-    context.action = "REPLACE";
-    context.location = addBasename(basename, createLocation(location));
-    context.url = createURL(context.location);
-  };
-
-  handleListen = () => noop;
-
-  handleBlock = () => noop;
-
-  componentWillMount() {
-    warning(
-      //没有history
-      !this.props.history,
-      "<StaticRouter> ignores the history prop. To use a custom history, " +
-        "use `import { Router }` instead of `import { StaticRouter as Router }`."
-    );
-  }
-
-  render() {
-    const { basename, context, location, ...props } = this.props;
-
-    const history = {
-      createHref: this.createHref,
-      action: "POP",
-      location: stripBasename(basename, createLocation(location)),
-      push: this.handlePush,
-      replace: this.handleReplace,
-      go: staticHandler("go"),
-      goBack: staticHandler("goBack"),
-      goForward: staticHandler("goForward"),
-      listen: this.handleListen,
-      block: this.handleBlock
-    };
-
-    return <Router {...props} history={history} />;
-  }
-}
-
-export default StaticRouter;
 ```
